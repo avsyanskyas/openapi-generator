@@ -152,6 +152,14 @@ public class TypeScriptAxiosClientCodegen extends AbstractTypeScriptClientCodege
     }
 
     @Override
+    public String getTypeDeclaration(Schema p) {
+        if (ModelUtils.isDateSchema(p) || ModelUtils.isDateTimeSchema(p)) {
+            return "Date";
+        }
+        return super.getTypeDeclaration(p);
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public Map<String, Object> postProcessModels(Map<String, Object> objs) {
         List<Object> models = (List<Object>) postProcessModelsEnum(objs).get("models");
