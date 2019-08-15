@@ -24,9 +24,7 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.FileSchema;
 import io.swagger.v3.oas.models.media.Schema;
-import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.media.XML;
-import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.servers.Server;
 import org.apache.commons.lang3.StringUtils;
@@ -291,7 +289,7 @@ public class RustServerCodegen extends DefaultCodegen implements CodegenConfig {
         }
         info.setVersion(StringUtils.join(versionComponents, "."));
 
-        URL url = URLPathUtils.getServerURL(openAPI);
+        URL url = URLPathUtils.getServerURL(openAPI, serverVariableOverrides());
         additionalProperties.put("serverHost", url.getHost());
         additionalProperties.put("serverPort", URLPathUtils.getPort(url, 80));
     }
@@ -709,6 +707,9 @@ public class RustServerCodegen extends DefaultCodegen implements CodegenConfig {
                             consumesPlainText = true;
                         } else if (isMimetypeWwwFormUrlEncoded(mediaType)) {
                             additionalProperties.put("usesUrlEncodedForm", true);
+                        } else if (isMimetypeMultipartFormData(mediaType)) {
+                            op.vendorExtensions.put("consumesMultipart", true);
+                            additionalProperties.put("apiUsesMultipart", true);
                         }
                     }
                 }
@@ -724,8 +725,8 @@ public class RustServerCodegen extends DefaultCodegen implements CodegenConfig {
                 } else {
                     op.bodyParam.vendorExtensions.put("consumesJson", true);
                 }
-
             }
+
             for (CodegenParameter param : op.bodyParams) {
                 processParam(param, op);
 
@@ -789,6 +790,8 @@ public class RustServerCodegen extends DefaultCodegen implements CodegenConfig {
             codegenParameter.isPrimitiveType = false;
             codegenParameter.isListContainer = false;
             codegenParameter.isString = false;
+            codegenParameter.isByteArray = ModelUtils.isByteArraySchema(original_schema);
+
 
             // This is a model, so should only have an example if explicitly
             // defined.
